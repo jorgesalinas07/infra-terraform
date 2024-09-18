@@ -1,0 +1,2 @@
+name,roles,secret_arn
+intfastapi,"[""rds_iam""]",arn:aws:secretsmanager:us-east-1:388813176377:secret:devops/rds/postgres/prod/int_fast_api_2-bq3dmU

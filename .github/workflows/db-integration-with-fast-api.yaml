@@ -1,0 +1,86 @@
+name: db-integration-with-fast-api workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  paths:
+    - 'aws-ecr/**'
+
+
+env:
+  WORKING_DIR: aws-ecr
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  ci-cd-prod:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.9
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{env.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{env.AWS_SECRET_ACCESS_KEY}}
+          aws-region: ${{env.AWS_REGION}}
+
+      - name: Set terraform workspace
+        id: terraform-workspace
+        env:
+          WORKSPACE: prod
+        run: |
+          WORKSPACE_LIST=$(terraform workspace list)
+          echo $WORKSPACE
+          if [[ "$WORKSPACE_LIST" != *"$WORKSPACE"* ]]; then
+            terraform workspace new $WORKSPACE
+          fi
+          echo "TF_WORKSPACE=$WORKSPACE" >> "$GITHUB_ENV"
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check
+        working-directory: ./${{ env.WORKING_DIR }}
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check
+        working-directory: ./${{ env.WORKING_DIR }}
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        working-directory: ./${{ env.WORKING_DIR }}
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        working-directory: ./${{ env.WORKING_DIR }}
+
+      - name: Terraform Plan prod
+        id: terraform-plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan
+        continue-on-error: true
+        working-directory: ./${{ env.WORKING_DIR }}
+
+      - name: Terraform Plan prod Status
+        if: steps.terraform-plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply Stage
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve
+        working-directory: ./${{ env.WORKING_DIR }}

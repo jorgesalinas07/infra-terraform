@@ -1,0 +1,3 @@
+name,database,owner
+user,usersdb_qa,intfastapi_qa
+user,usersdb_stage,intfastapi_stage

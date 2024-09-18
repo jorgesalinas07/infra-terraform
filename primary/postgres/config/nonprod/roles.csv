@@ -1,0 +1,3 @@
+name,roles,secret_arn
+clients_qa,"[""rds_iam""]",arn:aws:secretsmanager:us-east-1:217309640606:secret:devops/rds/postgres/nonprod/qa/clients-cdW8mW
+clients_stage,"[""rds_iam""]",arn:aws:secretsmanager:us-east-1:217309640606:secret:devops/rds/postgres/nonprod/stage/clients-2Yp5CO
